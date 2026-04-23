@@ -1,5 +1,7 @@
 plugins {
-    id "java-library"
+    id "java"
+    id 'maven-publish'
+
 }
 
 repositories {
@@ -21,4 +23,12 @@ dependencies {
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
 }
