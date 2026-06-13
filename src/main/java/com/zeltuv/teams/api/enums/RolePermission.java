@@ -8,7 +8,6 @@ public enum RolePermission {
     ACCESS_ENDERCHEST,
     USE_HOME,
     SET_HOME,
-    SET_NAME,
     SWITCH_FRIENDLY_FIRE;
 
 }

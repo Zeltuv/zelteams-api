@@ -64,23 +64,8 @@ public interface ITeam {
     boolean isOwnerByUuid(UUID uuid);
 
     /**
-     * Gets the name of the team.
-     * The name can be null if not set.
-     *
-     * @return The team name, or null if not set
-     */
-    String getName();
-
-    /**
-     * Sets the name of the team.
-     *
-     * @param name The new team name
-     */
-    void setName(String name);
-
-    /**
      * Gets the tag of the team.
-     * Tags are typically short identifiers displayed before player names.
+     * Tags are short alphanumeric identifiers and act as the team's only display label.
      *
      * @return The team tag
      */
@@ -94,21 +79,12 @@ public interface ITeam {
     void setTag(String tag);
 
     /**
-     * Gets the display name of the team.
-     * Returns a placeholder if no name is set, otherwise returns the formatted name.
+     * Gets the display label of the team.
+     * As teams no longer have a separate name, this returns the team tag.
      *
-     * @return The formatted team name or placeholder
+     * @return The team tag
      */
     String getDisplayName();
-
-    /**
-     * Checks if the given name matches the team name.
-     * Comparison is case-insensitive and strips color codes.
-     *
-     * @param name The name to compare
-     * @return true if names match, false otherwise
-     */
-    boolean hasName(String name);
 
     /**
      * Checks if the given tag matches the team tag.
@@ -135,6 +111,73 @@ public interface ITeam {
      * @param home The new home location, or null to unset the home
      */
     void setHome(Location home);
+
+    /**
+     * Gets all named homes of the team.
+     * The returned map is insertion-ordered (name -> location).
+     *
+     * @return A live map of home names to locations
+     */
+    Map<String, Location> getHomes();
+
+    /**
+     * Gets a specific named home location.
+     *
+     * @param name The home name (case-insensitive)
+     * @return The location, or null if no home with that name exists
+     */
+    Location getHome(String name);
+
+    /**
+     * Checks if a named home exists.
+     *
+     * @param name The home name (case-insensitive)
+     * @return true if the home exists, false otherwise
+     */
+    boolean hasHome(String name);
+
+    /**
+     * Adds or updates a named home.
+     * If the name is new and the team is already at its home limit, the home is not added.
+     * Changes are automatically saved to the database.
+     *
+     * @param name The home name (case-insensitive)
+     * @param home The location to store
+     * @return true if the home was set, false if rejected because the limit is reached
+     */
+    boolean addHome(String name, Location home);
+
+    /**
+     * Removes a named home.
+     * Changes are automatically saved to the database.
+     *
+     * @param name The home name (case-insensitive)
+     */
+    void removeHome(String name);
+
+    /**
+     * Gets the maximum number of homes this team may have.
+     * This value is derived from the owner's permission and persisted so it
+     * remains correct even while the owner is offline. Always at least 1.
+     *
+     * @return The maximum number of homes
+     */
+    int getMaxHomes();
+
+    /**
+     * Sets the maximum number of homes this team may have.
+     * Typically computed from the owner's permission on join and persisted.
+     *
+     * @param maxHomes The maximum number of homes
+     */
+    void setMaxHomes(int maxHomes);
+
+    /**
+     * Checks whether the team has reached its home limit.
+     *
+     * @return true if the team cannot add more homes, false otherwise
+     */
+    boolean isHomesFull();
 
     /**
      * Gets the list of team members (excluding the owner).
@@ -390,7 +433,57 @@ public interface ITeam {
 
     void updateScore(double score);
 
-    boolean isTagChanged();
+    /**
+     * Gets the epoch-millis timestamp of the last team tag change.
+     * Persisted so the tag-change cooldown survives restarts. 0 means never changed.
+     *
+     * @return The last tag-change timestamp in milliseconds, or 0
+     */
+    long getLastTagChange();
+
+    /**
+     * Sets the timestamp (epoch millis) of the last team tag change.
+     *
+     * @param timestamp The timestamp in milliseconds
+     */
+    void setLastTagChange(long timestamp);
+
+    /**
+     * Checks whether the team is currently within its tag-change cooldown window.
+     *
+     * @return true if the tag cannot be changed yet, false otherwise
+     */
+    boolean isTagOnCooldown();
+
+    /**
+     * Gets the remaining tag-change cooldown in whole seconds (rounded up).
+     *
+     * @return The remaining cooldown in seconds, or 0 if not on cooldown
+     */
+    long getTagCooldownSecondsLeft();
+
+    /**
+     * Gets the config key of the team's selected color, or null if none is set.
+     *
+     * @return The selected color key, or null
+     */
+    String getColorKey();
+
+    /**
+     * Sets the team's selected color by its config key (null to clear it).
+     *
+     * @param colorKey The color config key
+     */
+    void setColorKey(String colorKey);
+
+    /**
+     * Gets the resolved color code of the team's selected color
+     * (the raw value from the config, e.g. "&c" or "&#FF5555"), or an empty
+     * string if no color is selected or the key no longer exists.
+     *
+     * @return The color code, or an empty string
+     */
+    String getColor();
 
     /**
      * Saves the team data to the database.
